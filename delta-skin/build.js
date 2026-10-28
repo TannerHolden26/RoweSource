@@ -31,7 +31,6 @@ const C = {
   shellDeep: "#c95f06",
   bezel: "#3c404c",
   bezelEdge: "#2b2e37",
-  lcd: "#a9b2a4",
   logoGrey: "#a4abbb",
   dpad: "#3ec3db",
   dpadDark: "#2496ad",
@@ -257,7 +256,6 @@ function bezel(g) {
       ${image(ART.starters, x + w + 1 * u - stW, y + h + 1 * u - stH, stH)}
     </g>
     <rect x="${s.x - 3 * u}" y="${s.y - 3 * u}" width="${s.w + 6 * u}" height="${s.h + 6 * u}" rx="${3 * u}" fill="#23262e"/>
-    <rect x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" fill="${C.lcd}"/>
     <circle cx="${ledX - 9 * u}" cy="${ledY}" r="${4 * u}" fill="#ff3b30"/>
     <circle cx="${ledX - 10 * u}" cy="${ledY - 1.2 * u}" r="${1.4 * u}" fill="#ffb3ad"/>
     ${[0, 1, 2].map((i) => `<path d="M${ledX - 2 * u + i * 5 * u} ${ledY - 4.5 * u} q${3 * u} ${4.5 * u} 0 ${9 * u}" fill="none" stroke="#c9cdd8" stroke-width="${1.6 * u}" stroke-linecap="round"/>`).join("")}
@@ -289,6 +287,12 @@ function buildSVG(g) {
       <stop offset="0" stop-color="#6fd7ea"/><stop offset="1" stop-color="${C.dpad}"/>
     </linearGradient>
   </defs>
+  <!-- Delta draws the skin over the game, so the screen area must be see-through. -->
+  <mask id="screenHole" maskUnits="userSpaceOnUse" x="0" y="0" width="${W}" height="${H}">
+    <rect width="${W}" height="${H}" fill="#fff"/>
+    <rect x="${g.screen.x}" y="${g.screen.y}" width="${g.screen.w}" height="${g.screen.h}" fill="#000"/>
+  </mask>
+  <g mask="url(#screenHole)">
   <rect width="${W}" height="${H}" fill="url(#shell)"/>
   ${insides(g)}
   ${pcb(g.pcb, u)}
@@ -309,6 +313,7 @@ function buildSVG(g) {
   ${well(g.menu.cx, g.menu.cy, g.menu.r)}
   <path d="M${g.menu.cx - 6 * u} ${g.menu.cy - 4 * u} h${12 * u} M${g.menu.cx - 6 * u} ${g.menu.cy} h${12 * u} M${g.menu.cx - 6 * u} ${g.menu.cy + 4 * u} h${12 * u}"
     stroke="rgba(110,45,0,.55)" stroke-width="${1.8 * u}" stroke-linecap="round"/>
+  </g>
 </svg>`;
 }
 
@@ -359,8 +364,8 @@ function representation(g, base) {
     fs.writeFileSync(path.join(OUT_DIR, `${base}.svg`), svg);
     for (const scale of [1, 2, 3]) {
       const page = await browser.newPage({ viewport: { width: v.W, height: v.H }, deviceScaleFactor: scale });
-      await page.setContent(`<html><body style="margin:0">${svg}</body></html>`);
-      await page.screenshot({ path: path.join(OUT_DIR, `${base}@${scale}x.png`) });
+      await page.setContent(`<html><body style="margin:0;background:transparent">${svg}</body></html>`);
+      await page.screenshot({ path: path.join(OUT_DIR, `${base}@${scale}x.png`), omitBackground: true });
       await page.close();
     }
     info.representations.iphone[v.device][v.orientation] = representation(g, base);
