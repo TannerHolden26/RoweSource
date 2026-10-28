@@ -65,7 +65,7 @@ function layout(W, H, device, orientation) {
     g.dpad = { cx: W * 0.24, cy: r0 + 0.4 * rh, size: 132 * u };
     g.a = { cx: W * 0.835, cy: g.dpad.cy - 22 * u, r: 30 * u };
     g.b = { cx: W * 0.655, cy: g.dpad.cy + 10 * u, r: 28 * u };
-    g.pikaWave = { cx: W * 0.47, cy: g.dpad.cy + 34 * u, size: 70 * u };
+    g.pikaWave = { cx: W * 0.47, cy: g.dpad.cy + 36 * u, size: 84 * u };
     g.pill = { w: 40 * u, h: 13 * u };
     g.select = { cx: W * 0.4, cy: r0 + 0.7 * rh };
     g.start = { cx: W * 0.555, cy: r0 + 0.7 * rh };
@@ -90,7 +90,7 @@ function layout(W, H, device, orientation) {
     const rightW = W - sideSafe - rightX;
     const dsize = Math.min(132 * u, leftW * 0.8);
     g.dpad = { cx: sideSafe + leftW / 2, cy: H * 0.55, size: dsize };
-    g.pikaWave = { cx: g.dpad.cx, cy: H * 0.17, size: 62 * u };
+    g.pikaWave = { cx: g.dpad.cx, cy: H * 0.17, size: Math.min(70 * u, H * 0.26) };
     g.nintendo = { cx: g.dpad.cx, cy: H * 0.9, w: Math.min(96 * u, leftW * 0.8) };
     const br = Math.min(28 * u, rightW * 0.19);
     g.b = { cx: rightX + 0.3 * rightW, cy: H * 0.53, r: br };
@@ -104,98 +104,20 @@ function layout(W, H, device, orientation) {
   return g;
 }
 
-// ---------- Artwork: Pokémon (drawn in a 100×100 box unless noted) ----------
-const INK = "#2d2116";
-
-// Front-facing Pikachu, waving.
-const PIKA_WAVE = `
-  <g stroke="${INK}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M32 80 L14 68 L21 61 L5 47 L12 43 L3 30 L22 44 L16 49 L31 60 L26 65 L39 74 Z" fill="#ffd83a"/>
-    <path d="M39 74 L32 80 L27 72 Z" fill="#9a5b2a"/>
-    <path d="M33 30 C22 18 16 8 14 1 C24 4 34 14 41 24 Z" fill="#ffd83a"/>
-    <path d="M14 1 C17 4 20 7 22 10 C20 12 18 13 16.5 13 C15.5 9 14.5 5 14 1 Z" fill="${INK}"/>
-    <path d="M60 23 C64 12 72 4 82 0 C82 9 76 20 68 29 Z" fill="#ffd83a"/>
-    <path d="M82 0 C81 5 79 10 77 13 C75 12 73 10 72 8 C75 4 78 2 82 0 Z" fill="${INK}"/>
-    <ellipse cx="48" cy="77" rx="19" ry="18" fill="#ffd83a"/>
-    <path d="M33 74 C27 80 27 88 34 89" fill="#ffd83a"/>
-    <ellipse cx="39" cy="95" rx="7" ry="3.6" fill="#ffd83a"/>
-    <ellipse cx="57" cy="95" rx="7" ry="3.6" fill="#ffd83a"/>
-    <ellipse cx="47" cy="42" rx="26" ry="22" fill="#ffd83a"/>
-    <path d="M62 72 C70 66 76 56 79 46" fill="none" stroke-width="8.5"/>
-    <path d="M62 72 C70 66 76 56 79 46" fill="none" stroke="#ffd83a" stroke-width="3.8"/>
-    <circle cx="80" cy="43" r="5.2" fill="#ffd83a"/>
-  </g>
-  <path d="M84 30 Q90 34 88 41 M90 26 Q98 32 95 42" fill="none" stroke="${INK}" stroke-width="1.8" stroke-linecap="round" opacity=".6"/>
-  <ellipse cx="37.5" cy="38" rx="4" ry="4.6" fill="${INK}"/>
-  <circle cx="36.3" cy="36.3" r="1.6" fill="#fff"/>
-  <ellipse cx="57.5" cy="38" rx="4" ry="4.6" fill="${INK}"/>
-  <circle cx="56.3" cy="36.3" r="1.6" fill="#fff"/>
-  <circle cx="27" cy="49" r="6" fill="#ee4b3a"/>
-  <circle cx="68" cy="49" r="6" fill="#ee4b3a"/>
-  <path d="M42 48 Q47 58 53 48 Z" fill="#c8323a" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/>
-  <path d="M44.5 53 Q47.5 56 50.5 53" fill="#ff8f8a"/>
-  <path d="M46.5 45 L48.5 45" stroke="${INK}" stroke-width="1.6" stroke-linecap="round"/>
-`;
-
-// Pikachu running to the right (for the bottom-left of the screen bezel).
-const PIKA_RUN = `
-  <g stroke="${INK}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
-    <path d="M30 70 L10 74 L16 64 L0 62 L10 52 L-2 46 L20 48 L16 56 L32 58 Z" fill="#ffd83a"/>
-    <path d="M30 70 L32 58 L36 64 Z" fill="#9a5b2a"/>
-    <path d="M42 26 C36 14 28 6 18 2 C20 12 28 24 36 32 Z" fill="#ffd83a"/>
-    <path d="M18 2 C20 7 22 10 25 13 C27 11 28 9 28 8 C25 5 22 3 18 2 Z" fill="${INK}"/>
-    <path d="M60 22 C66 12 74 6 86 4 C82 14 74 22 66 28 Z" fill="#ffd83a"/>
-    <path d="M86 4 C84 8 82 11 79 13 C77 11 76 9 76 8 C79 6 82 5 86 4 Z" fill="${INK}"/>
-    <path d="M28 66 C26 52 38 46 52 52 C64 58 66 74 58 84 C50 92 34 90 28 80 Z" fill="#ffd83a"/>
-    <path d="M38 86 C34 94 42 98 48 94" fill="#ffd83a"/>
-    <path d="M58 82 C64 90 72 90 74 84" fill="#ffd83a"/>
-    <path d="M58 62 C66 62 72 66 76 70" fill="none" stroke-width="7"/>
-    <path d="M58 62 C66 62 72 66 76 70" fill="none" stroke="#ffd83a" stroke-width="2.4"/>
-    <ellipse cx="58" cy="40" rx="25" ry="21" fill="#ffd83a"/>
-  </g>
-  <ellipse cx="66" cy="36" rx="4" ry="4.8" fill="${INK}"/>
-  <circle cx="64.8" cy="34.3" r="1.6" fill="#fff"/>
-  <circle cx="72" cy="48" r="5.6" fill="#ee4b3a"/>
-  <path d="M78 42 Q81 46 77 48" fill="none" stroke="${INK}" stroke-width="1.8" stroke-linecap="round"/>
-`;
-
-// The three Johto starters stacked, facing left (box 100×300).
-const STARTERS = `
-  <g stroke="${INK}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
-    <!-- Cyndaquil -->
-    <path d="M62 34 L70 4 L76 24 L86 0 L88 24 L100 10 L96 38 Z" fill="#f24a1c"/>
-    <path d="M68 34 L74 16 L78 30 L86 14 L88 32 L95 24 L92 40 Z" fill="#ffb21f" stroke="none"/>
-    <path d="M10 62 C10 46 30 34 56 34 C84 34 100 46 100 62 L100 96 L24 96 C14 92 10 76 10 62 Z" fill="#2f5d7e"/>
-    <path d="M6 66 C2 60 6 52 18 52 C30 52 44 58 52 68 C58 78 56 92 44 96 L22 96 C14 94 8 78 6 66 Z" fill="#f6e4a2"/>
-    <path d="M24 60 Q30 57 35 61" fill="none"/>
-    <circle cx="9" cy="61" r="1.6" fill="${INK}"/>
-    <!-- Totodile -->
-    <path d="M70 100 L80 92 L84 104 L94 98 L94 112 L100 112 L100 124 Z" fill="#e2413a"/>
-    <path d="M36 104 C52 96 84 98 98 114 C104 122 102 150 96 164 L40 164 C34 150 34 120 36 104 Z" fill="#59b4dd"/>
-    <path d="M42 104 C30 104 4 112 2 124 C2 130 12 132 30 130 L44 128 Z" fill="#59b4dd"/>
-    <path d="M30 136 C16 136 4 142 6 150 C10 158 32 160 48 156 Z" fill="#59b4dd"/>
-    <path d="M44 128 C30 130 12 132 8 134 C10 148 30 152 46 150 Z" fill="#d93d33"/>
-    <path d="M12 129 L15 135 L18 129 M22 129 L25 135 L28 129 M14 150 L17 145 L20 150" fill="#fff" stroke-width="1.6"/>
-    <ellipse cx="46" cy="114" rx="7" ry="8" fill="#fff"/>
-    <path d="M40 166 L56 152 L72 166 L88 152 L96 166 Z" fill="#f2d76b"/>
-  </g>
-  <ellipse cx="44" cy="115" rx="3.4" ry="4.2" fill="#b0281f"/>
-  <circle cx="43" cy="113.5" r="1.2" fill="#fff"/>
-  <g stroke="${INK}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
-    <!-- Chikorita -->
-    <path d="M62 196 C56 172 72 160 98 164 C92 176 84 190 66 200 Z" fill="#6fbf4a"/>
-    <path d="M66 196 C74 184 84 174 96 166" fill="none" stroke-width="1.6"/>
-    <path d="M30 226 C30 206 50 194 70 196 C92 198 100 214 100 232 L100 300 L40 300 C30 280 28 250 30 226 Z" fill="#dcefb0"/>
-    <circle cx="40" cy="270" r="7" fill="#6fbf4a"/>
-    <circle cx="56" cy="274" r="7" fill="#6fbf4a"/>
-    <circle cx="72" cy="272" r="7" fill="#6fbf4a"/>
-    <circle cx="88" cy="268" r="7" fill="#6fbf4a"/>
-    <ellipse cx="46" cy="228" rx="5.6" ry="7" fill="#fff"/>
-  </g>
-  <ellipse cx="44.5" cy="229" rx="3.6" ry="5" fill="#c8302a"/>
-  <circle cx="43.4" cy="227" r="1.3" fill="#fff"/>
-  <path d="M34 246 Q38 249 42 246" fill="none" stroke="${INK}" stroke-width="1.8" stroke-linecap="round"/>
-`;
+// ---------- Artwork: stickers cut from photos of the real console (see extract_art.py) ----------
+function loadArt(name) {
+  const file = path.join(__dirname, "art", name);
+  const buf = fs.readFileSync(file);
+  // PNG width/height live at bytes 16-23 of the IHDR chunk.
+  return { href: `data:image/png;base64,${buf.toString("base64")}`, w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
+}
+const ART = {
+  wave: loadArt("pikachu-wave.png"),
+  run: loadArt("pikachu-run.png"),
+  starters: loadArt("starters.png"),
+};
+const image = (art, x, y, h) =>
+  `<image href="${art.href}" x="${x}" y="${y}" width="${(h * art.w) / art.h}" height="${h}" preserveAspectRatio="none"/>`;
 
 // ---------- SVG builders ----------
 function emboss(x, y, text, size, anchor = "middle", extra = "") {
@@ -312,24 +234,27 @@ function bezel(g) {
 
   const logoSize = (g.landscape ? 22 : 26) * u;
   const logoY = s.y + s.h + (g.landscape ? 0.62 : 0.6) * (y + h - s.y - s.h) + logoSize * 0.32;
-  const logoX = s.x + s.w / 2;
   const colors = ["#f0457d", "#7d55d6", "#3fae4c", "#f4c315", "#2d8fe0"];
   const color = "COLOR".split("").map((ch, i) => `<tspan fill="${colors[i]}">${ch}</tspan>`).join("");
 
   const ledX = x + (s.x - x) / 2, ledY = s.y + s.h * 0.34;
-  const pikaSize = (g.landscape ? 64 : 74) * u;
-  // The starters sit in the strip between the screen and the bezel's right edge.
-  const stripX = s.x + s.w + 4 * u;
-  const stW = Math.min((x + w - stripX) * 1.25, (y + h - s.y) / 3);
-  const stH = stW * 3;
+  // Running Pikachu fills the bottom-left corner below the screen; the bezel edge cuts it off.
+  const runH = Math.min(0.19 * w, y + h - (s.y + s.h) - 4 * u);
+  // The starters stand in the strip between the screen and the bezel's right edge.
+  const stripW = x + w - (s.x + s.w) - 3 * u;
+  // Center the logo in the space between the running Pikachu and the screen's right edge.
+  const runRight = x - 2 * u + (runH * ART.run.w) / ART.run.h;
+  const logoX = Math.max(s.x + s.w / 2, (runRight + s.x + s.w) / 2);
+  const stH = Math.min(0.82 * h, stripW / (ART.starters.w / ART.starters.h));
+  const stW = stH * ART.starters.w / ART.starters.h;
 
   return `
     <path d="${bez}" fill="${C.bezelEdge}" transform="translate(0 ${2 * u})"/>
     <path d="${bez}" fill="url(#bezelFill)"/>
     <clipPath id="bezClip"><path d="${bez}"/></clipPath>
     <g clip-path="url(#bezClip)">
-      <svg x="${x - pikaSize * 0.12}" y="${y + h - pikaSize * 0.98}" width="${pikaSize}" height="${pikaSize}" viewBox="0 0 100 100" overflow="visible">${PIKA_RUN}</svg>
-      <svg x="${stripX}" y="${y + h - stH - 2 * u}" width="${stW}" height="${stH}" viewBox="0 0 100 300" overflow="visible">${STARTERS}</svg>
+      ${image(ART.run, x - 2 * u, y + h + 1 * u - runH, runH)}
+      ${image(ART.starters, x + w + 1 * u - stW, y + h + 1 * u - stH, stH)}
     </g>
     <rect x="${s.x - 3 * u}" y="${s.y - 3 * u}" width="${s.w + 6 * u}" height="${s.h + 6 * u}" rx="${3 * u}" fill="#23262e"/>
     <rect x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" fill="${C.lcd}"/>
@@ -376,9 +301,7 @@ function buildSVG(g) {
   ${dpad(g)}
   ${roundButton(g.b, C.bBtn, "#000", "B")}
   ${roundButton(g.a, C.aBtn, C.aBtnDark, "A")}
-  <svg x="${g.pikaWave.cx - g.pikaWave.size / 2}" y="${g.pikaWave.cy - g.pikaWave.size / 2}" width="${g.pikaWave.size}" height="${g.pikaWave.size}" viewBox="0 0 100 100" overflow="visible">
-    ${PIKA_WAVE}
-  </svg>
+  ${image(ART.wave, g.pikaWave.cx - (g.pikaWave.size * ART.wave.w) / ART.wave.h / 2, g.pikaWave.cy - g.pikaWave.size / 2, g.pikaWave.size)}
   ${pill(g.select, g)}
   ${pill(g.start, g)}
   ${emboss(g.select.cx, g.select.cy + 22 * u, "SELECT", 9.5 * u, "middle", 'font-weight="700" letter-spacing="0.5"')}
