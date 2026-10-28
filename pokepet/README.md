@@ -26,9 +26,16 @@ Screen; it opens full screen and works offline.
 
 Tap your Pokémon to pet it.
 
-## Put it on your iPhone
+## Play it
 
-It has to be opened from a web address, the same way as the launcher:
+PokéPet is published as a private page on claude.ai, so it opens from a link in Safari
+or the Claude app while you're signed in. There, your Pokémon is saved to your account,
+so it follows you between devices.
+
+## Host it yourself (optional)
+
+You can also serve it from GitHub Pages, the same way as the launcher. This needs a public
+repository or a paid GitHub plan:
 
 1. On GitHub, open this repository and go to **Settings → Pages**.
 2. Set **Source** to *Deploy from a branch*, pick the branch with the `pokepet` folder and
@@ -37,7 +44,7 @@ It has to be opened from a web address, the same way as the launcher:
 4. Open that link in **Safari**, tap **Share → Add to Home Screen**, and open **PokéPet**
    from your Home Screen.
 
-Your Pokémon is saved on your phone, in the Home Screen app. (Opening the link in Safari
-instead gives you a separate save.)
+When self-hosted, your Pokémon is saved on your phone, in the Home Screen app. (Opening the
+link in Safari instead gives you a separate save.)
 
 Sprites are Pokémon Black/White animated sprites from the PokéAPI sprites collection.
