@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Game Menu">
+<meta name="theme-color" content="#ececec">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<title>Game Menu</title>
+<style>
+  :root {
+    --bg-a: #ebebeb;
+    --bg-b: #f5f5f5;
+    --tile-border: #c9c9c9;
+    --tile-bg: #fbfbfb;
+    --wii-blue: #34bdec;
+    --wii-blue-dark: #1a9fd4;
+    --text: #6f6f6f;
+    --text-strong: #4a4a4a;
+    --bar-top: #fdfdfd;
+    --bar-bottom: #d4d4d4;
+    --font: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", "Arial Rounded MT Bold", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    font-family: var(--font);
+    color: var(--text);
+    background: var(--bg-a);
+    background-image: repeating-linear-gradient(0deg, var(--bg-a) 0 2px, var(--bg-b) 2px 4px);
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+  }
+  button { font-family: inherit; }
+
+  /* ---------- Channel grid ---------- */
+  #menu { position: fixed; inset: 0; display: flex; flex-direction: column; }
+  #grid-wrap {
+    flex: 1; position: relative; overflow: hidden;
+    padding: calc(env(safe-area-inset-top) + 18px) 16px 8px;
+  }
+  #pages { display: flex; height: 100%; transition: transform .45s cubic-bezier(.2,.8,.2,1); }
+  .page {
+    flex: 0 0 100%; height: 100%;
+    display: grid; gap: 12px; padding: 0 22px;
+    grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr);
+  }
+  @media (orientation: portrait) {
+    .page {
+      grid-template-columns: repeat(3, 1fr); grid-template-rows: none;
+      align-content: center; gap: 12px 10px; padding: 0 30px;
+    }
+    .page .tile { aspect-ratio: 4 / 3; border-radius: 12px; }
+  }
+  .tile {
+    position: relative; border-radius: 16px; overflow: hidden;
+    border: 3px solid var(--tile-border);
+    background: var(--tile-bg);
+    background-image: repeating-linear-gradient(0deg, #f0f0f0 0 2px, #fbfbfb 2px 4px);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,.08), 0 1px 0 #fff;
+    cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s;
+  }
+  .tile.empty { cursor: pointer; }
+  .tile.empty::after {
+    content: "+"; position: absolute; inset: 0; display: grid; place-items: center;
+    font-size: 28px; color: #d6d6d6; font-weight: 700; opacity: 0; transition: opacity .2s;
+  }
+  .tile.empty:hover::after, .tile.empty:active::after { opacity: 1; }
+  .tile.filled:hover, .tile.filled:active, .tile.focus {
+    border-color: var(--wii-blue);
+    box-shadow: 0 0 0 3px rgba(52,189,236,.35), 0 0 18px rgba(52,189,236,.55);
+    transform: scale(1.03);
+  }
+  .tile.filled { animation: none; }
+  .tile.filled:hover { animation: glow 1.4s ease-in-out infinite; }
+  @keyframes glow {
+    0%,100% { box-shadow: 0 0 0 3px rgba(52,189,236,.25), 0 0 10px rgba(52,189,236,.4); }
+    50%     { box-shadow: 0 0 0 4px rgba(52,189,236,.45), 0 0 22px rgba(52,189,236,.7); }
+  }
+  .tile .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .tile .plate {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    padding: 6px 8px; text-align: center; color: #fff; font-weight: 800;
+    font-size: clamp(11px, 2.2vw, 20px); line-height: 1.15;
+    text-shadow: 0 1px 2px rgba(0,0,0,.35);
+  }
+  .tile .badge {
+    position: absolute; right: 6px; bottom: 5px; padding: 1px 6px; border-radius: 8px;
+    font-size: 9px; font-weight: 800; color: #fff; background: rgba(0,0,0,.35); letter-spacing: .5px;
+  }
+  .tile .shine {
+    position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(180deg, rgba(255,255,255,.45) 0%, rgba(255,255,255,0) 45%);
+  }
+
+  .arrow {
+    position: absolute; top: 50%; width: 34px; height: 54px; margin-top: -27px; border: 0;
+    background: none; cursor: pointer; z-index: 3; padding: 0;
+  }
+  .arrow svg { width: 100%; height: 100%; filter: drop-shadow(0 2px 3px rgba(0,0,0,.2)); }
+  .arrow[hidden] { display: none; }
+  #prev { left: 2px; } #next { right: 2px; }
+  .arrow:active { transform: scale(.92); }
+
+  /* ---------- Bottom bar ---------- */
+  #bar { position: relative; height: calc(150px + env(safe-area-inset-bottom)); flex: 0 0 auto; }
+  #bar svg.shape { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #clock {
+    position: absolute; left: 50%; top: -6px; transform: translateX(-50%);
+    font-size: 54px; font-weight: 700; color: #a3a3a3; letter-spacing: 2px;
+    text-shadow: 0 2px 0 #fff, 0 -1px 0 rgba(0,0,0,.08);
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  #clock .colon { display: inline-block; transition: opacity .2s; }
+  #clock .ampm { font-size: 20px; margin-left: 4px; }
+  #date {
+    position: absolute; left: 50%; top: 76px; transform: translateX(-50%);
+    font-size: 20px; font-weight: 700; color: #8d8d8d; white-space: nowrap;
+  }
+  .round-btn {
+    position: absolute; top: 18px; width: 72px; height: 72px; border-radius: 50%;
+    border: 3px solid #c4c4c4; cursor: pointer;
+    background: radial-gradient(circle at 50% 30%, #ffffff 0%, #f1f1f1 55%, #dcdcdc 100%);
+    box-shadow: 0 3px 6px rgba(0,0,0,.15), inset 0 -2px 4px rgba(0,0,0,.06);
+    display: grid; place-items: center; color: #8a8a8a; font-weight: 800; font-size: 22px;
+    transition: border-color .15s, box-shadow .15s, transform .1s;
+  }
+  .round-btn:hover, .round-btn:active {
+    border-color: var(--wii-blue);
+    box-shadow: 0 0 0 3px rgba(52,189,236,.3), 0 0 14px rgba(52,189,236,.5);
+  }
+  .round-btn:active { transform: scale(.94); }
+  #wii-btn { left: max(22px, env(safe-area-inset-left)); }
+  #mail-btn { right: max(22px, env(safe-area-inset-right)); }
+  @media (max-width: 420px) {
+    #clock { font-size: 44px; top: 0; }
+    #date { font-size: 16px; top: 72px; }
+    .round-btn { width: 60px; height: 60px; top: 22px; font-size: 18px; }
+  }
+
+  /* ---------- Channel preview ---------- */
+  #preview {
+    position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column;
+    background: var(--bg-a);
+    background-image: repeating-linear-gradient(0deg, var(--bg-a) 0 2px, var(--bg-b) 2px 4px);
+    opacity: 0; pointer-events: none;
+    transition: transform .4s cubic-bezier(.2,.8,.2,1), opacity .3s;
+  }
+  #preview.open { opacity: 1; pointer-events: auto; transform: none !important; }
+  #banner {
+    position: relative; flex: 1; margin: calc(env(safe-area-inset-top) + 16px) 16px 0;
+    border-radius: 20px; overflow: hidden; border: 3px solid var(--tile-border);
+    background: #222; box-shadow: 0 6px 20px rgba(0,0,0,.15);
+  }
+  #banner .blur {
+    position: absolute; inset: -30px; background-size: cover; background-position: center;
+    filter: blur(24px) saturate(1.3) brightness(.8); transform: scale(1.1);
+  }
+  #banner img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  #banner .plate {
+    position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 20px;
+    color: #fff; font-size: clamp(26px, 7vw, 64px); font-weight: 800; text-shadow: 0 3px 8px rgba(0,0,0,.4);
+    animation: float 3.5s ease-in-out infinite;
+  }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  #banner .title {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 30px 18px 14px;
+    background: linear-gradient(transparent, rgba(0,0,0,.55));
+    color: #fff; font-weight: 800; font-size: 22px;
+  }
+  #banner .title small { display: block; font-size: 13px; opacity: .8; font-weight: 700; }
+  #preview-actions {
+    display: flex; justify-content: center; gap: 18px;
+    padding: 22px 16px calc(28px + env(safe-area-inset-bottom));
+  }
+  .pill {
+    min-width: 150px; padding: 18px 26px; border-radius: 40px; border: 3px solid #c4c4c4;
+    background: linear-gradient(#ffffff, #e9e9e9); color: var(--text-strong);
+    font-size: 20px; font-weight: 800; cursor: pointer;
+    box-shadow: 0 3px 8px rgba(0,0,0,.12);
+    transition: border-color .15s, box-shadow .15s, transform .1s;
+  }
+  .pill:hover, .pill:active, .pill.primary {
+    border-color: var(--wii-blue);
+    box-shadow: 0 0 0 3px rgba(52,189,236,.3), 0 0 16px rgba(52,189,236,.5);
+  }
+  .pill:active { transform: scale(.96); }
+  .pill.small { min-width: 0; padding: 10px 18px; font-size: 15px; }
+  .pill.danger { color: #c0392b; }
+
+  /* ---------- Dialogs ---------- */
+  .scrim {
+    position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center;
+    background: rgba(40,40,40,.35); padding: 16px;
+  }
+  .scrim.open { display: flex; }
+  .dialog {
+    width: min(460px, 100%); max-height: calc(100% - 20px); overflow-y: auto;
+    background: #fafafa; border-radius: 22px; border: 3px solid #cfcfcf;
+    box-shadow: 0 12px 40px rgba(0,0,0,.25); padding: 20px;
+    animation: pop .25s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes pop { from { transform: scale(.85); opacity: 0; } }
+  .dialog h2 { margin: 0 0 14px; font-size: 20px; color: var(--text-strong); text-align: center; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 13px; font-weight: 800; margin-bottom: 5px; }
+  .field input[type=text], .field select {
+    width: 100%; padding: 11px 12px; border-radius: 12px; border: 2px solid #d3d3d3;
+    font: inherit; font-size: 16px; color: var(--text-strong); background: #fff;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--wii-blue); }
+  .field .hint { font-size: 12px; margin-top: 4px; color: #999; }
+  .field .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .hidden-input { display: none; }
+  .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+  #art-preview { width: 64px; height: 48px; border-radius: 8px; object-fit: cover; border: 2px solid #ddd; display: none; }
+  .msg-list { display: grid; gap: 10px; }
+  .msg-list .pill { width: 100%; }
+  #toast {
+    position: fixed; left: 50%; bottom: calc(170px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+    background: rgba(60,60,60,.85); color: #fff; padding: 10px 18px; border-radius: 20px;
+    font-weight: 700; font-size: 14px; z-index: 30; opacity: 0; transition: opacity .25s; pointer-events: none;
+  }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="menu">
+  <div id="grid-wrap">
+    <button class="arrow" id="prev" aria-label="Previous page"><svg viewBox="0 0 34 54"><path d="M28 4 L6 27 L28 50" fill="none" stroke="#34bdec" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div id="pages"></div>
+    <button class="arrow" id="next" aria-label="Next page"><svg viewBox="0 0 34 54"><path d="M6 4 L28 27 L6 50" fill="none" stroke="#34bdec" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+
+  <div id="bar">
+    <svg class="shape" viewBox="0 0 1000 150" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="barfill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fdfdfd"/><stop offset="1" stop-color="#d2d2d2"/>
+        </linearGradient>
+      </defs>
+      <path d="M0,150 V18 C40,18 60,6 110,6 C170,6 190,62 250,62 H750 C810,62 830,6 890,6 C940,6 960,18 1000,18 V150 Z" fill="url(#barfill)"/>
+      <path d="M0,18 C40,18 60,6 110,6 C170,6 190,62 250,62 H750 C810,62 830,6 890,6 C940,6 960,18 1000,18" fill="none" stroke="#34bdec" stroke-width="3" vector-effect="non-scaling-stroke"/>
+    </svg>
+    <div id="clock"></div>
+    <div id="date"></div>
+    <button class="round-btn" id="wii-btn" aria-label="Settings">Wii</button>
+    <button class="round-btn" id="mail-btn" aria-label="Message board">
+      <svg width="32" height="24" viewBox="0 0 32 24"><rect x="2" y="2" width="28" height="20" rx="3" fill="#fff" stroke="#8a8a8a" stroke-width="2.5"/><path d="M3 4 L16 14 L29 4" fill="none" stroke="#8a8a8a" stroke-width="2.5" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<div id="preview">
+  <div id="banner"></div>
+  <div id="preview-actions">
+    <button class="pill" id="back-btn">Wii Menu</button>
+    <button class="pill primary" id="start-btn">Start</button>
+  </div>
+</div>
+
+<!-- Channel editor -->
+<div class="scrim" id="editor">
+  <div class="dialog" role="dialog" aria-labelledby="editor-title">
+    <h2 id="editor-title">New Channel</h2>
+    <div class="field">
+      <label>ROM file</label>
+      <div class="row">
+        <button class="pill small" id="pick-rom">Choose ROM…</button>
+        <span id="rom-status" class="hint"></span>
+      </div>
+      <input type="file" id="rom-input" class="hidden-input">
+      <div class="hint">Pick the same ROM file you imported into Delta. It stays on your phone and is only used to work out the game's ID.</div>
+    </div>
+    <div class="field">
+      <label for="f-name">Name</label>
+      <input type="text" id="f-name" placeholder="Pokémon R.O.W.E.">
+    </div>
+    <div class="field">
+      <label for="f-console">Console</label>
+      <select id="f-console"></select>
+    </div>
+    <div class="field">
+      <label for="f-sha1">Delta game ID (SHA-1)</label>
+      <input type="text" id="f-sha1" placeholder="Filled in when you choose a ROM" autocapitalize="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label>Channel art</label>
+      <div class="row">
+        <button class="pill small" id="pick-art">Choose image…</button>
+        <img id="art-preview" alt="">
+        <button class="pill small" id="clear-art" hidden>Remove</button>
+      </div>
+      <input type="file" id="art-input" accept="image/*" class="hidden-input">
+    </div>
+    <div class="actions">
+      <button class="pill small danger" id="delete-btn" hidden>Delete</button>
+      <button class="pill small" id="move-left" hidden>◀ Move</button>
+      <button class="pill small" id="move-right" hidden>Move ▶</button>
+    </div>
+    <div class="actions">
+      <button class="pill small" id="cancel-btn">Cancel</button>
+      <button class="pill small primary" id="save-btn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Message board / settings -->
+<div class="scrim" id="board">
+  <div class="dialog" role="dialog" aria-labelledby="board-title">
+    <h2 id="board-title">Wii Message Board</h2>
+    <div class="msg-list">
+      <button class="pill" id="add-btn">Add a Channel</button>
+      <button class="pill" id="sound-btn">Sound: On</button>
+      <button class="pill" id="export-btn">Back Up Channels</button>
+      <button class="pill" id="import-btn">Restore Backup</button>
+      <input type="file" id="import-input" accept="application/json,.json" class="hidden-input">
+      <div class="hint" style="text-align:center;font-size:12px;color:#999">Tip: press and hold a channel to edit or move it.</div>
+      <button class="pill" id="board-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- Data ----------
+  const CONSOLES = {
+    gba:     { label: "Game Boy Advance", short: "GBA", color: ["#5b4fd1", "#8a7cf2"], ext: ["gba"] },
+    gbc:     { label: "Game Boy Color",   short: "GBC", color: ["#1f9e8a", "#46c9a6"], ext: ["gbc"] },
+    gb:      { label: "Game Boy",         short: "GB",  color: ["#6f7f3a", "#9bb04f"], ext: ["gb"] },
+    nes:     { label: "NES",              short: "NES", color: ["#b3262b", "#e04a3f"], ext: ["nes"] },
+    snes:    { label: "SNES",             short: "SNES",color: ["#6b5aa8", "#a08ad6"], ext: ["sfc", "smc"] },
+    n64:     { label: "Nintendo 64",      short: "N64", color: ["#1c6fc4", "#3fa34d"], ext: ["n64", "z64", "v64"] },
+    nds:     { label: "Nintendo DS",      short: "DS",  color: ["#4a4a52", "#8b8b96"], ext: ["nds"] },
+    genesis: { label: "Sega Genesis",     short: "GEN", color: ["#1a1a1a", "#3d5ea8"], ext: ["gen", "md", "smd", "bin"] },
+  };
+  const PER_PAGE = 12;
+  const STORE_KEY = "wii-delta-launcher-v1";
+
+  const DEFAULT_STATE = {
+    sound: true,
+    channels: [
+      { id: "rowe", name: "Pokémon R.O.W.E.", console: "gba", sha1: "", art: "" },
+    ],
+  };
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return JSON.parse(JSON.stringify(DEFAULT_STATE));
+  }
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+    catch (e) { toast("Couldn't save. Try smaller channel art."); }
+  }
+  let state = load();
+
+  // ---------- Sound (generated, no audio files) ----------
+  let audio = null;
+  function tone(freq, start, dur, type = "sine", gain = 0.08) {
+    if (!state.sound) return;
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      const t = audio.currentTime + start;
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(gain, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(audio.destination);
+      o.start(t); o.stop(t + dur + 0.02);
+    } catch (e) {}
+  }
+  const sfx = {
+    tick:  () => tone(1400, 0, 0.05, "triangle", 0.05),
+    open:  () => { tone(660, 0, 0.12); tone(990, 0.07, 0.18); },
+    back:  () => { tone(880, 0, 0.1); tone(587, 0.06, 0.16); },
+    start: () => { tone(523, 0, 0.5, "sine", 0.07); tone(659, 0.08, 0.5, "sine", 0.06); tone(784, 0.16, 0.6, "sine", 0.06); tone(1047, 0.24, 0.7, "sine", 0.05); },
+    page:  () => tone(740, 0, 0.09, "triangle", 0.06),
+  };
+
+  // ---------- Helpers ----------
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const consoleOf = (ch) => CONSOLES[ch.console] || CONSOLES.gba;
+  let toastTimer;
+  function toast(msg) {
+    const t = $("toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+  }
+
+  // The fixed first channel opens Delta itself, like the Disc Channel.
+  const DELTA_CHANNEL = { id: "__delta", name: "Delta", console: null, fixed: true };
+  const allChannels = () => [DELTA_CHANNEL, ...state.channels];
+
+  // ---------- Grid ----------
+  let page = 0;
+  function pageCount() { return Math.max(1, Math.ceil((allChannels().length + 1) / PER_PAGE)); }
+
+  function tileHTML(ch) {
+    if (ch.fixed) {
+      return `<div class="plate" style="background:linear-gradient(160deg,#ffffff,#e7e2ff)">
+        <svg viewBox="0 0 100 90" style="width:42%;max-height:70%"><path d="M50 6 L94 84 H6 Z" fill="none" stroke="#7b5cf0" stroke-width="10" stroke-linejoin="round"/></svg>
+      </div><div class="badge" style="background:#7b5cf0">DELTA</div><div class="shine"></div>`;
+    }
+    const c = consoleOf(ch);
+    const body = ch.art
+      ? `<img class="art" src="${ch.art}" alt="">`
+      : `<div class="plate" style="background:linear-gradient(150deg,${c.color[0]},${c.color[1]})">${esc(ch.name)}</div>`;
+    return `${body}<div class="badge">${c.short}</div><div class="shine"></div>`;
+  }
+
+  function render() {
+    const chans = allChannels();
+    const pages = $("pages");
+    pages.innerHTML = "";
+    for (let p = 0; p < pageCount(); p++) {
+      const el = document.createElement("div");
+      el.className = "page";
+      for (let i = 0; i < PER_PAGE; i++) {
+        const idx = p * PER_PAGE + i;
+        const ch = chans[idx];
+        const tile = document.createElement("div");
+        tile.className = "tile " + (ch ? "filled" : "empty");
+        if (ch) {
+          tile.innerHTML = tileHTML(ch);
+          tile.setAttribute("role", "button");
+          tile.setAttribute("aria-label", ch.name);
+          bindTile(tile, ch);
+        } else {
+          tile.addEventListener("click", () => { sfx.tick(); openEditor(null); });
+        }
+        el.appendChild(tile);
+      }
+      pages.appendChild(el);
+    }
+    page = Math.min(page, pageCount() - 1);
+    showPage();
+  }
+
+  function showPage() {
+    $("pages").style.transform = `translateX(${-page * 100}%)`;
+    $("prev").hidden = page === 0;
+    $("next").hidden = page >= pageCount() - 1;
+  }
+  function goPage(d) {
+    const n = Math.max(0, Math.min(pageCount() - 1, page + d));
+    if (n !== page) { page = n; sfx.page(); showPage(); }
+  }
+
+  function bindTile(tile, ch) {
+    let holdTimer = null, held = false;
+    const cancel = () => { clearTimeout(holdTimer); holdTimer = null; };
+    tile.addEventListener("pointerdown", () => {
+      held = false;
+      if (ch.fixed) return;
+      holdTimer = setTimeout(() => { held = true; sfx.tick(); openEditor(ch); }, 550);
+    });
+    tile.addEventListener("pointerup", cancel);
+    tile.addEventListener("pointerleave", cancel);
+    tile.addEventListener("pointercancel", cancel);
+    tile.addEventListener("contextmenu", (e) => { e.preventDefault(); if (!ch.fixed && !held) { held = true; openEditor(ch); } });
+    tile.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") sfx.tick(); });
+    tile.addEventListener("click", () => { if (!held) openPreview(ch, tile); });
+  }
+
+  // Swipe between pages
+  (() => {
+    let x0 = null, y0 = null;
+    const wrap = $("grid-wrap");
+    wrap.addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+    wrap.addEventListener("touchend", (e) => {
+      if (x0 === null) return;
+      const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) goPage(dx < 0 ? 1 : -1);
+      x0 = null;
+    });
+  })();
+  $("prev").addEventListener("click", () => goPage(-1));
+  $("next").addEventListener("click", () => goPage(1));
+
+  // ---------- Clock ----------
+  function tickClock() {
+    const now = new Date();
+    let h = now.getHours();
+    const ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12 || 12;
+    const m = String(now.getMinutes()).padStart(2, "0");
+    const colonOn = now.getSeconds() % 2 === 0;
+    $("clock").innerHTML = `${h}<span class="colon" style="opacity:${colonOn ? 1 : 0.25}">:</span>${m}<span class="ampm">${ampm}</span>`;
+    $("date").textContent = now.toLocaleDateString(undefined, { weekday: "short", month: "numeric", day: "numeric" });
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  // ---------- Preview / launch ----------
+  let current = null;
+  function openPreview(ch, tile) {
+    current = ch;
+    const banner = $("banner");
+    if (ch.fixed) {
+      banner.innerHTML = `<div class="plate" style="background:linear-gradient(160deg,#ffffff,#d9d0ff);color:#7b5cf0;text-shadow:none">
+        <div><svg viewBox="0 0 100 90" style="width:min(40vw,220px)"><path d="M50 6 L94 84 H6 Z" fill="none" stroke="#7b5cf0" stroke-width="9" stroke-linejoin="round"/></svg><div>Delta</div></div></div>`;
+    } else {
+      const c = consoleOf(ch);
+      banner.innerHTML = ch.art
+        ? `<div class="blur" style="background-image:url('${ch.art}')"></div><img src="${ch.art}" alt="">`
+        : `<div class="plate" style="background:linear-gradient(150deg,${c.color[0]},${c.color[1]})">${esc(ch.name)}</div>`;
+      banner.innerHTML += `<div class="title">${esc(ch.name)}<small>${c.label}</small></div>`;
+    }
+    // Zoom out of the tile that was tapped.
+    const pv = $("preview");
+    const r = tile.getBoundingClientRect();
+    pv.style.transition = "none";
+    pv.style.transformOrigin = `${r.left + r.width / 2}px ${r.top + r.height / 2}px`;
+    pv.style.transform = `scale(${Math.max(r.width / innerWidth, 0.15)})`;
+    pv.getBoundingClientRect();
+    pv.style.transition = "";
+    pv.classList.add("open");
+    sfx.open();
+  }
+  function closePreview() {
+    const pv = $("preview");
+    pv.classList.remove("open");
+    pv.style.transform = "scale(.2)";
+    sfx.back();
+  }
+  $("back-btn").addEventListener("click", closePreview);
+  $("start-btn").addEventListener("click", () => {
+    if (!current) return;
+    sfx.start();
+    const sha = (current.sha1 || "").trim().toLowerCase();
+    const url = current.fixed || !sha ? "delta://" : `delta://game/${sha}`;
+    if (!current.fixed && !sha) toast("No game ID set, so opening Delta…");
+    setTimeout(() => { window.location.href = url; }, 450);
+  });
+
+  // ---------- Editor ----------
+  let editing = null;   // channel being edited, or null for a new one
+  let draftArt = "";
+  const sel = $("f-console");
+  sel.innerHTML = Object.entries(CONSOLES).map(([k, c]) => `<option value="${k}">${c.label}</option>`).join("");
+
+  function openEditor(ch) {
+    editing = ch;
+    $("board").classList.remove("open");
+    $("editor-title").textContent = ch ? "Edit Channel" : "New Channel";
+    $("f-name").value = ch ? ch.name : "";
+    sel.value = ch ? ch.console : "gba";
+    $("f-sha1").value = ch ? ch.sha1 || "" : "";
+    $("rom-status").textContent = ch && ch.sha1 ? "Game ID set ✓" : "";
+    setArt(ch ? ch.art || "" : "");
+    $("delete-btn").hidden = $("move-left").hidden = $("move-right").hidden = !ch;
+    $("editor").classList.add("open");
+  }
+  function closeEditor() { $("editor").classList.remove("open"); editing = null; }
+  function setArt(dataUrl) {
+    draftArt = dataUrl;
+    const img = $("art-preview");
+    img.style.display = dataUrl ? "block" : "none";
+    if (dataUrl) img.src = dataUrl;
+    $("clear-art").hidden = !dataUrl;
+  }
+
+  $("pick-rom").addEventListener("click", () => $("rom-input").click());
+  $("rom-input").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    const guess = Object.entries(CONSOLES).find(([, c]) => c.ext.includes(ext));
+    if (guess) sel.value = guess[0];
+    if (!$("f-name").value.trim()) $("f-name").value = file.name.replace(/\.[^.]+$/, "").replace(/[_]+/g, " ");
+    if (!(window.crypto && crypto.subtle)) {
+      $("rom-status").textContent = "Open this page over https to compute the ID.";
+      return;
+    }
+    $("rom-status").textContent = "Reading…";
+    try {
+      const buf = await file.arrayBuffer();
+      const hash = await crypto.subtle.digest("SHA-1", buf);
+      $("f-sha1").value = [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
+      $("rom-status").textContent = "Game ID set ✓";
+    } catch (err) {
+      $("rom-status").textContent = "Couldn't read that file.";
+    }
+  });
+
+  $("pick-art").addEventListener("click", () => $("art-input").click());
+  $("clear-art").addEventListener("click", () => setArt(""));
+  $("art-input").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      // Shrink to keep saved data small.
+      const max = 480, scale = Math.min(1, max / Math.max(img.width, img.height));
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(img.width * scale); cv.height = Math.round(img.height * scale);
+      cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+      setArt(cv.toDataURL("image/jpeg", 0.82));
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => { toast("Couldn't open that image."); URL.revokeObjectURL(url); };
+    img.src = url;
+  });
+
+  $("cancel-btn").addEventListener("click", () => { sfx.back(); closeEditor(); });
+  $("save-btn").addEventListener("click", () => {
+    const name = $("f-name").value.trim();
+    if (!name) { toast("Give the channel a name."); return; }
+    const sha1 = $("f-sha1").value.trim().toLowerCase();
+    if (sha1 && !/^[0-9a-f]{40}$/.test(sha1)) { toast("The game ID should be 40 letters and numbers."); return; }
+    const data = { name, console: sel.value, sha1, art: draftArt };
+    if (editing) Object.assign(editing, data);
+    else {
+      state.channels.push({ id: String(Date.now()), ...data });
+      page = Math.floor(state.channels.length / PER_PAGE); // the page the new channel lands on
+    }
+    save(); render(); sfx.open(); closeEditor();
+  });
+  $("delete-btn").addEventListener("click", () => {
+    if (!editing || !confirm(`Delete the "${editing.name}" channel?`)) return;
+    state.channels = state.channels.filter((c) => c !== editing);
+    save(); render(); sfx.back(); closeEditor();
+  });
+  function move(d) {
+    const i = state.channels.indexOf(editing), j = i + d;
+    if (i < 0 || j < 0 || j >= state.channels.length) return;
+    [state.channels[i], state.channels[j]] = [state.channels[j], state.channels[i]];
+    save(); render(); sfx.tick();
+  }
+  $("move-left").addEventListener("click", () => move(-1));
+  $("move-right").addEventListener("click", () => move(1));
+
+  // ---------- Message board ----------
+  function updateSoundLabel() { $("sound-btn").textContent = `Sound: ${state.sound ? "On" : "Off"}`; }
+  $("wii-btn").addEventListener("click", () => { sfx.open(); updateSoundLabel(); $("board").classList.add("open"); });
+  $("mail-btn").addEventListener("click", () => { sfx.open(); updateSoundLabel(); $("board").classList.add("open"); });
+  $("board-close").addEventListener("click", () => { sfx.back(); $("board").classList.remove("open"); });
+  $("add-btn").addEventListener("click", () => openEditor(null));
+  $("sound-btn").addEventListener("click", () => { state.sound = !state.sound; save(); updateSoundLabel(); sfx.tick(); });
+  $("export-btn").addEventListener("click", async () => {
+    const blob = new Blob([JSON.stringify(state)], { type: "application/json" });
+    const file = new File([blob], "game-menu-backup.json", { type: "application/json" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file] }); return; } catch (e) { if (e.name === "AbortError") return; }
+    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+  $("import-btn").addEventListener("click", () => $("import-input").click());
+  $("import-input").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      if (!Array.isArray(data.channels)) throw new Error("bad backup");
+      state = { sound: data.sound !== false, channels: data.channels };
+      save(); page = 0; render(); toast("Channels restored.");
+      $("board").classList.remove("open");
+    } catch (err) { toast("That isn't a launcher backup."); }
+  });
+
+  // Close dialogs by tapping outside them.
+  document.querySelectorAll(".scrim").forEach((s) =>
+    s.addEventListener("click", (e) => { if (e.target === s) { s.classList.remove("open"); editing = null; } }));
+
+  // Keyboard support for desktop testing.
+  document.addEventListener("keydown", (e) => {
+    if ($("preview").classList.contains("open")) {
+      if (e.key === "Escape") closePreview();
+      if (e.key === "Enter") $("start-btn").click();
+      return;
+    }
+    if (document.querySelector(".scrim.open")) return;
+    if (e.key === "ArrowLeft") goPage(-1);
+    if (e.key === "ArrowRight") goPage(1);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
