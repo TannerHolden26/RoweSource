@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PokéPet">
+<meta name="theme-color" content="#2b2340">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<title>PokéPet</title>
+<style>
+  :root {
+    --shell-a: #ffb347;
+    --shell-b: #f08a1c;
+    --shell-edge: #c9650b;
+    --lcd: #e9efd8;
+    --lcd-dark: #c9d4b0;
+    --ink: #2b2a22;
+    --btn: #fff6e6;
+    --accent: #3150d6;
+    --font: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", "Arial Rounded MT Bold", system-ui, sans-serif;
+    --pixel: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: var(--font); color: var(--ink);
+    background: radial-gradient(120% 80% at 50% 0%, #4a3d73 0%, #2b2340 60%, #1d1730 100%);
+    display: flex; align-items: center; justify-content: center;
+    padding: calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 12px);
+    overflow: hidden; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  }
+  button { font-family: inherit; color: inherit; }
+
+  /* ---------- Egg-shaped device ---------- */
+  #device {
+    position: relative; width: min(100%, 400px, 62vh); aspect-ratio: 0.82;
+    border-radius: 50% 50% 46% 46% / 56% 56% 44% 44%;
+    background:
+      radial-gradient(60% 40% at 32% 20%, rgba(255,255,255,.55), rgba(255,255,255,0) 70%),
+      radial-gradient(80% 60% at 70% 90%, rgba(150,60,0,.25), rgba(150,60,0,0) 70%),
+      linear-gradient(160deg, var(--shell-a), var(--shell-b));
+    box-shadow: inset 0 -10px 24px rgba(120,40,0,.35), inset 0 8px 18px rgba(255,255,255,.35), 0 18px 40px rgba(0,0,0,.45);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  #device::before { /* keychain loop */
+    content: ""; position: absolute; top: -18px; left: 50%; width: 34px; height: 34px; margin-left: -17px;
+    border: 7px solid #d9d9e3; border-radius: 50%; z-index: -1;
+  }
+  .brand { font-weight: 900; font-size: 15px; letter-spacing: 2px; color: rgba(255,240,215,.85);
+    text-shadow: 0 1px 0 rgba(140,60,0,.4); margin-bottom: 6px; }
+
+  .icons { display: flex; gap: 6%; justify-content: center; width: 74%; }
+  .icon {
+    width: 46px; height: 46px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+    background: radial-gradient(circle at 50% 35%, #fffaf0, #ffe4bf); display: grid; place-items: center;
+    box-shadow: 0 3px 0 var(--shell-edge), 0 5px 8px rgba(0,0,0,.2);
+    transition: transform .08s, box-shadow .08s;
+  }
+  .icon:active { transform: translateY(3px); box-shadow: 0 0 0 var(--shell-edge), 0 2px 4px rgba(0,0,0,.2); }
+  .icon svg { width: 26px; height: 26px; }
+  .icon[disabled] { opacity: .45; }
+  .icon.attn { animation: attn 1s steps(2) infinite; }
+  @keyframes attn { 50% { background: radial-gradient(circle at 50% 35%, #fff, #ffd166); } }
+
+  /* ---------- LCD ---------- */
+  #lcd-wrap {
+    width: 74%; margin: 12px 0; padding: 10px; border-radius: 18px;
+    background: #3a3546; box-shadow: inset 0 3px 8px rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.4);
+  }
+  #lcd {
+    position: relative; aspect-ratio: 1.08; border-radius: 10px; overflow: hidden;
+    background: var(--lcd);
+    background-image:
+      linear-gradient(rgba(0,0,0,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,.035) 1px, transparent 1px);
+    background-size: 4px 4px;
+    font-family: var(--pixel); font-size: 12px;
+  }
+  #lcd.night { background-color: #4d5770; }
+  #lcd.night .ground { filter: brightness(.5); }
+  .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 22%;
+    background: linear-gradient(#b9d48a, #9fc06f); border-top: 2px solid #86a95a; }
+  .ground::before { content: ""; position: absolute; inset: 4px 0 auto 0; height: 6px;
+    background: radial-gradient(circle at 6px 3px, #86a95a 2px, transparent 3px) 0 0 / 22px 6px; }
+
+  #topbar { position: absolute; top: 6px; left: 8px; right: 8px; display: flex; justify-content: space-between;
+    align-items: center; font-weight: 700; z-index: 3; }
+  #lcd.night #topbar { color: #e6ebf5; }
+  #attn-flag { color: #d62828; font-weight: 900; font-size: 15px; visibility: hidden; animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  #stage { position: absolute; left: 0; right: 0; bottom: 14%; height: 70%; }
+  #pet-box { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); transition: left 1.6s linear; }
+  #pet {
+    display: block; image-rendering: pixelated; transform-origin: 50% 100%;
+    filter: drop-shadow(0 2px 0 rgba(0,0,0,.15)); cursor: pointer;
+  }
+  #pet.flip { transform: scaleX(-1); }
+  #pet.sick { filter: hue-rotate(60deg) saturate(.6) drop-shadow(0 2px 0 rgba(0,0,0,.15)); }
+  #pet.fainted { filter: grayscale(1) opacity(.7); transform: rotate(80deg) translate(10px, 10px); }
+  #pet.asleep { filter: brightness(.75); }
+  #pet.bounce { animation: bounce .45s ease-out 2; }
+  @keyframes bounce { 40% { translate: 0 -14px; } }
+  #egg { display: none; width: 76px; height: 92px; cursor: pointer; transform-origin: 50% 100%; }
+  #egg.wobble { animation: wobble 1.2s ease-in-out infinite; }
+  @keyframes wobble { 0%,60%,100% { rotate: 0deg; } 70% { rotate: -9deg; } 80% { rotate: 8deg; } 90% { rotate: -4deg; } }
+
+  #fx { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+  .float { position: absolute; font-size: 18px; animation: floatUp 1.4s ease-out forwards; }
+  @keyframes floatUp { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-46px); opacity: 0; } }
+  .zzz { position: absolute; font-weight: 900; color: #e6ebf5; animation: zz 2.4s linear infinite; }
+  @keyframes zz { from { transform: translate(0,0) scale(.7); opacity: 0; } 30% { opacity: 1; } to { transform: translate(18px,-40px) scale(1.2); opacity: 0; } }
+  #poops { position: absolute; right: 6px; bottom: 12%; display: flex; flex-wrap: wrap-reverse; width: 60px; gap: 2px; justify-content: flex-end; z-index: 1; }
+  #poops svg { width: 24px; height: 22px; }
+  #sick-icon { position: absolute; top: 26px; right: 10px; width: 24px; display: none; animation: blink 1s steps(2) infinite; z-index: 3; }
+  #food { position: absolute; bottom: 16%; width: 26px; display: none; z-index: 2; }
+
+  /* In-screen panels (stats, menus, game, messages) */
+  .panel {
+    position: absolute; inset: 0; background: var(--lcd); z-index: 5; display: none;
+    flex-direction: column; padding: 10px 12px; gap: 6px;
+    background-image: linear-gradient(rgba(0,0,0,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.035) 1px, transparent 1px);
+    background-size: 4px 4px;
+  }
+  .panel.open { display: flex; }
+  .panel h3 { margin: 0 0 2px; font-size: 13px; text-align: center; letter-spacing: 1px; }
+  .row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; }
+  .hearts { letter-spacing: 1px; font-size: 13px; color: #d62828; }
+  .hearts .off { color: #b9c0a8; }
+  .bar { flex: 0 0 52%; height: 9px; border: 2px solid var(--ink); border-radius: 3px; position: relative; overflow: hidden; }
+  .bar i { position: absolute; inset: 0 auto 0 0; background: var(--ink); }
+  .lcd-btn {
+    border: 2px solid var(--ink); background: transparent; border-radius: 8px; padding: 7px 8px;
+    font-family: var(--pixel); font-weight: 800; font-size: 12px; cursor: pointer; text-align: left;
+  }
+  .lcd-btn:active, .lcd-btn.sel { background: var(--ink); color: var(--lcd); }
+  .lcd-btn small { display: block; font-weight: 500; font-size: 10px; opacity: .8; }
+  .panel .spacer { flex: 1; }
+  .center { text-align: center; }
+  .pager { display: flex; justify-content: space-between; font-size: 10px; opacity: .7; }
+  input.lcd-input { font-family: var(--pixel); font-size: 16px; border: 2px solid var(--ink); border-radius: 6px;
+    padding: 6px 8px; background: #f6f9ee; width: 100%; text-align: center; }
+
+  #game-stage { flex: 1; position: relative; display: grid; place-items: center; }
+  #game-stage img { image-rendering: pixelated; transition: transform .15s; }
+  .game-arrows { display: flex; gap: 10px; }
+  .game-arrows .lcd-btn { flex: 1; text-align: center; font-size: 18px; padding: 6px; }
+
+  #toast {
+    position: absolute; left: 50%; top: 32px; transform: translateX(-50%); z-index: 6;
+    background: var(--ink); color: var(--lcd); padding: 4px 9px; border-radius: 6px; font-weight: 700; font-size: 11px;
+    white-space: nowrap; opacity: 0; transition: opacity .2s; pointer-events: none;
+  }
+  #toast.show { opacity: 1; }
+  #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 7; }
+  #flash.go { animation: flash 2.6s ease-in-out; }
+  @keyframes flash { 0%,100% { opacity: 0; } 15%,30%,45%,60% { opacity: .95; } 22%,37%,52% { opacity: .2; } 75% { opacity: 1; } }
+</style>
+</head>
+<body>
+
+<div id="device">
+  <div class="brand">POKÉPET</div>
+  <div class="icons">
+    <button class="icon" id="btn-stats" aria-label="Stats"><svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="9" fill="#2b2a22"/><rect x="10" y="7" width="4" height="14" fill="#2b2a22"/><rect x="17" y="3" width="4" height="18" fill="#2b2a22"/></svg></button>
+    <button class="icon" id="btn-feed" aria-label="Feed"><svg viewBox="0 0 24 24"><circle cx="12" cy="14" r="7" fill="#3b4bd1"/><path d="M12 7 C11 4 13 2 15 2" stroke="#2b7a2b" stroke-width="2" fill="none"/><path d="M13 5 C16 3 19 4 20 6 C17 7 15 7 13 5Z" fill="#43a047"/><circle cx="9.5" cy="12" r="1.8" fill="#9fb0ff"/></svg></button>
+    <button class="icon" id="btn-play" aria-label="Play"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#fff" stroke="#2b2a22" stroke-width="2"/><path d="M3 12 A9 9 0 0 1 21 12Z" fill="#e53935" stroke="#2b2a22" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="#fff" stroke="#2b2a22" stroke-width="2"/></svg></button>
+  </div>
+
+  <div id="lcd-wrap">
+    <div id="lcd">
+      <div class="ground"></div>
+      <div id="topbar"><span id="name-label"></span><span id="attn-flag">!</span><span id="age-label"></span></div>
+      <svg id="sick-icon" viewBox="0 0 24 24"><circle cx="12" cy="11" r="8" fill="#7b2cbf"/><path d="M8 9l3 3m0-3l-3 3M13 9l3 3m0-3l-3 3" stroke="#fff" stroke-width="1.8"/><path d="M8 16 q4 -3 8 0" stroke="#fff" stroke-width="1.8" fill="none"/></svg>
+      <div id="stage">
+        <div id="pet-box">
+          <svg id="egg" viewBox="0 0 76 92"><defs><radialGradient id="eg" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#e9e2cf"/></radialGradient></defs>
+            <path d="M38 2 C60 2 74 38 74 58 C74 78 58 90 38 90 C18 90 2 78 2 58 C2 38 16 2 38 2 Z" fill="url(#eg)" stroke="#2b2a22" stroke-width="3"/>
+            <circle cx="24" cy="40" r="7" fill="#7cc36b"/><circle cx="50" cy="28" r="5" fill="#f2a541"/><circle cx="52" cy="62" r="8" fill="#5aa9e6"/><circle cx="26" cy="70" r="5" fill="#f2a541"/>
+            <path id="crack" d="M14 50 L24 44 L30 52 L40 44 L48 52 L58 46" stroke="#2b2a22" stroke-width="2.5" fill="none" visibility="hidden"/></svg>
+          <img id="pet" alt="">
+        </div>
+        <svg id="food" viewBox="0 0 24 24"></svg>
+      </div>
+      <div id="poops"></div>
+      <div id="fx"></div>
+      <div id="toast"></div>
+      <div id="flash"></div>
+
+      <!-- Panels -->
+      <div class="panel" id="p-stats"></div>
+      <div class="panel" id="p-feed">
+        <h3>FEED</h3>
+        <button class="lcd-btn" data-food="berry">Oran Berry<small>Fills its tummy</small></button>
+        <button class="lcd-btn" data-food="puff">Poké Puff<small>A sweet treat, makes it happy</small></button>
+        <div class="spacer"></div>
+        <button class="lcd-btn center" data-close>Back</button>
+      </div>
+      <div class="panel" id="p-game">
+        <h3 id="game-title">WHICH WAY?</h3>
+        <div class="center" id="game-score" style="font-size:11px"></div>
+        <div id="game-stage"><img id="game-pet" alt=""></div>
+        <div class="game-arrows"><button class="lcd-btn" data-dir="-1">◀</button><button class="lcd-btn" data-dir="1">▶</button></div>
+      </div>
+      <div class="panel" id="p-msg">
+        <h3 id="msg-title"></h3>
+        <div id="msg-body" class="center" style="font-size:12px;line-height:1.4"></div>
+        <div class="spacer"></div>
+        <div id="msg-actions" style="display:grid;gap:6px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="icons">
+    <button class="icon" id="btn-clean" aria-label="Clean"><svg viewBox="0 0 24 24"><path d="M5 20 L10 9 L14 11 L9 22Z" fill="#8d6e63"/><path d="M12 10 L16 2" stroke="#6d4c41" stroke-width="2.5"/><path d="M3 21h8" stroke="#2b2a22" stroke-width="2"/><circle cx="18" cy="17" r="1.5" fill="#5aa9e6"/><circle cx="20" cy="13" r="1" fill="#5aa9e6"/></svg></button>
+    <button class="icon" id="btn-heal" aria-label="Medicine"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="18" rx="1" fill="#e53935"/><rect x="3" y="9" width="18" height="6" rx="1" fill="#e53935"/><rect x="10.5" y="4.5" width="3" height="15" fill="#fff" opacity=".35"/></svg></button>
+    <button class="icon" id="btn-sleep" aria-label="Lights"><svg viewBox="0 0 24 24"><path d="M15 3 A9 9 0 1 0 21 15 A7 7 0 0 1 15 3Z" fill="#f4c430" stroke="#2b2a22" stroke-width="1.5"/></svg></button>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- Species ----------
+  // Each egg hatches into one of these lines. Sprites are bundled in sprites/<dex>.gif.
+  const LINES = [
+    [{ dex: 172, name: "Pichu" }, { dex: 25, name: "Pikachu" }, { dex: 26, name: "Raichu" }],
+    [{ dex: 155, name: "Cyndaquil" }, { dex: 156, name: "Quilava" }, { dex: 157, name: "Typhlosion" }],
+    [{ dex: 158, name: "Totodile" }, { dex: 159, name: "Croconaw" }, { dex: 160, name: "Feraligatr" }],
+    [{ dex: 152, name: "Chikorita" }, { dex: 153, name: "Bayleef" }, { dex: 154, name: "Meganium" }],
+  ];
+  // Hours of age (and friendship) needed to evolve into each stage.
+  const EVOLVE = [null, { hours: 24, friendship: 50 }, { hours: 72, friendship: 70 }];
+
+  // ---------- Tuning (per minute) ----------
+  const MIN = 60 * 1000;
+  const RATE = {
+    hunger: 100 / (7 * 60),       // empty after ~7 hours awake
+    happy: 100 / (9 * 60),        // bored after ~9 hours
+    energyUse: 100 / (16 * 60),   // tired after ~16 hours awake
+    energyRest: 100 / (7 * 60),   // fully rested after ~7 hours asleep
+    sleepFactor: 0.3,             // needs drain slower while asleep
+    poopEvery: 200,               // minutes awake between messes
+  };
+  const HATCH_MS = 60 * 1000;
+  const STORE_KEY = "pokepet-v1";
+
+  // ---------- State ----------
+  const fresh = () => ({
+    phase: "egg", created: Date.now(), last: Date.now(), name: "",
+    line: Math.floor(Math.random() * LINES.length), stage: 0,
+    hunger: 70, happy: 70, energy: 100, health: 100, friendship: 20, weight: 5,
+    poops: 0, poopTimer: 0, sick: false, asleep: false, hatchedAt: 0,
+    sound: true, pendingEvolution: false, lastPet: 0, petsThisHour: 0, petHour: 0,
+  });
+  function load() {
+    try { const raw = localStorage.getItem(STORE_KEY); if (raw) return Object.assign(fresh(), JSON.parse(raw)); } catch (e) {}
+    return fresh();
+  }
+  function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) {} }
+  let S = load();
+
+  const clamp = (v, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, v));
+  const species = () => LINES[S.line][S.stage];
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- Simulation ----------
+  // Advances the pet minute by minute from the last save, so time passes while the app is closed.
+  function simulate(now = Date.now()) {
+    if (S.phase !== "alive") { S.last = now; return; }
+    const minutes = Math.floor((now - S.last) / MIN);
+    const steps = Math.min(minutes, 60 * 24 * 30); // catch up at most 30 days
+    for (let i = 0; i < steps && S.phase === "alive"; i++) { S.last += MIN; step(); }
+    if (S.phase !== "alive" || minutes > steps) S.last = now;
+  }
+
+  function step() {
+    const f = S.asleep ? RATE.sleepFactor : 1;
+    S.hunger = clamp(S.hunger - RATE.hunger * f);
+    S.happy = clamp(S.happy - RATE.happy * f);
+    if (S.asleep) {
+      S.energy = clamp(S.energy + RATE.energyRest);
+      if (S.energy >= 100) S.asleep = false; // wakes up on its own
+    } else {
+      S.energy = clamp(S.energy - RATE.energyUse);
+      if (S.energy <= 3) S.asleep = true;     // dozes off when exhausted
+      S.poopTimer += 1;
+      if (S.poopTimer >= RATE.poopEvery) { S.poopTimer = 0; S.poops = Math.min(4, S.poops + 1); }
+    }
+
+    // Health: neglect hurts, good care slowly heals.
+    let dh = 0;
+    if (S.hunger <= 0) dh -= 0.12;
+    if (S.poops >= 2) dh -= 0.03 * S.poops;
+    if (S.sick) dh -= 0.1;
+    if (dh === 0 && S.hunger > 30) dh = 0.08;
+    S.health = clamp(S.health + dh);
+
+    if (!S.sick && (S.hunger <= 0 || S.poops >= 3 || S.energy <= 0) && Math.random() < 1 / 240) S.sick = true;
+    if (S.hunger <= 0 || S.happy <= 0) S.friendship = clamp(S.friendship - 0.01);
+    if (S.hunger > 50 && S.happy > 50 && S.poops === 0 && !S.sick) S.friendship = clamp(S.friendship + 0.004);
+
+    // Evolution, if old enough and well loved.
+    const next = EVOLVE[S.stage + 1];
+    if (next && !S.pendingEvolution) {
+      const ageH = (S.last - S.hatchedAt) / (60 * MIN);
+      if (ageH >= next.hours && S.friendship >= next.friendship && S.health >= 50) S.pendingEvolution = true;
+    }
+
+    if (S.health <= 0) { S.phase = "fainted"; S.asleep = false; }
+  }
+
+  function needs() {
+    if (S.phase !== "alive") return [];
+    const n = [];
+    if (S.hunger < 25) n.push("hungry");
+    if (S.happy < 25) n.push("bored");
+    if (S.poops >= 2) n.push("dirty");
+    if (S.sick) n.push("sick");
+    if (S.energy < 20 && !S.asleep) n.push("sleepy");
+    return n;
+  }
+
+  // ---------- Sound ----------
+  let ac = null;
+  function beep(freq, dur = 0.08, delay = 0, type = "square", vol = 0.04) {
+    if (!S.sound) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur + 0.02);
+    } catch (e) {}
+  }
+  const sfx = {
+    tap: () => beep(1200, 0.04),
+    yes: () => { beep(880, 0.07); beep(1320, 0.1, 0.08); },
+    no: () => { beep(330, 0.12); beep(247, 0.18, 0.12); },
+    happy: () => [988, 1175, 1319, 1568].forEach((f, i) => beep(f, 0.08, i * 0.08)),
+    hatch: () => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => beep(f, 0.1, i * 0.1)),
+    evolve: () => [392, 440, 494, 523, 587, 659, 698, 784, 880, 988, 1047].forEach((f, i) => beep(f, 0.18, i * 0.2, "triangle", 0.05)),
+  };
+
+  // ---------- UI helpers ----------
+  let toastTimer;
+  function toast(msg) {
+    const t = $("toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 1800);
+  }
+  function floatFx(text, x, y) {
+    const el = document.createElement("div");
+    el.className = "float"; el.textContent = text;
+    el.style.left = x + "px"; el.style.top = y + "px";
+    $("fx").appendChild(el); setTimeout(() => el.remove(), 1500);
+  }
+  function petCenter() {
+    const lcd = $("lcd").getBoundingClientRect(), p = $("pet-box").getBoundingClientRect();
+    return { x: p.left - lcd.left + p.width / 2, y: p.top - lcd.top };
+  }
+  function openPanel(id) { closePanels(); $("toast").classList.remove("show"); $(id).classList.add("open"); }
+  function closePanels() { document.querySelectorAll(".panel").forEach((p) => p.classList.remove("open")); }
+  const anyPanelOpen = () => !!document.querySelector(".panel.open");
+
+  const POOP = `<svg viewBox="0 0 24 22"><path d="M12 2c1 2 0 3-1 4h3c3 0 4 3 2 5h2c3 0 4 5 0 6H6c-4-1-3-6 0-6h2c-2-2-1-5 2-5h1c1-1 1-3 1-4z" fill="#7a5230" stroke="#2b2a22" stroke-width="1.4"/></svg>`;
+  const FOODS = {
+    berry: `<circle cx="12" cy="14" r="7" fill="#3b4bd1" stroke="#2b2a22" stroke-width="1.4"/><path d="M13 5 C16 3 19 4 20 6 C17 7 15 7 13 5Z" fill="#43a047"/><circle cx="9.5" cy="12" r="1.8" fill="#9fb0ff"/>`,
+    puff: `<path d="M5 15 Q12 3 19 15 Z" fill="#ff8fb1" stroke="#2b2a22" stroke-width="1.4"/><rect x="5" y="15" width="14" height="5" rx="2" fill="#f7d08a" stroke="#2b2a22" stroke-width="1.4"/><circle cx="12" cy="7" r="1.6" fill="#e53935"/>`,
+  };
+
+  // ---------- Rendering ----------
+  const SCALE = 2.2;
+  function setSprite(img, dex, scale = SCALE) {
+    const src = `sprites/${dex}.gif`;
+    if (img.dataset.src === src) return;
+    img.dataset.src = src;
+    img.onload = () => { img.width = img.naturalWidth * scale; img.height = img.naturalHeight * scale; };
+    img.src = src;
+  }
+
+  function render() {
+    const lcd = $("lcd"), pet = $("pet"), egg = $("egg");
+    lcd.classList.toggle("night", S.asleep);
+
+    if (S.phase === "egg") {
+      egg.style.display = "block"; pet.style.display = "none";
+      egg.classList.add("wobble");
+      $("crack").setAttribute("visibility", Date.now() - S.created > HATCH_MS * 0.6 ? "visible" : "hidden");
+      $("name-label").textContent = "EGG"; $("age-label").textContent = "";
+    } else {
+      egg.style.display = "none"; pet.style.display = "block";
+      setSprite(pet, species().dex);
+      pet.classList.toggle("sick", S.sick && S.phase === "alive");
+      pet.classList.toggle("fainted", S.phase === "fainted");
+      pet.classList.toggle("asleep", S.asleep);
+      $("name-label").textContent = S.name || species().name;
+      const days = Math.floor((Date.now() - S.hatchedAt) / (24 * 60 * MIN));
+      $("age-label").textContent = `${days}d`;
+    }
+
+    $("sick-icon").style.display = S.sick && S.phase === "alive" ? "block" : "none";
+    $("poops").innerHTML = S.phase === "alive" ? POOP.repeat(S.poops) : "";
+    const n = needs();
+    $("attn-flag").style.visibility = n.length ? "visible" : "hidden";
+    $("btn-feed").classList.toggle("attn", n.includes("hungry"));
+    $("btn-play").classList.toggle("attn", n.includes("bored"));
+    $("btn-clean").classList.toggle("attn", n.includes("dirty"));
+    $("btn-heal").classList.toggle("attn", n.includes("sick"));
+    $("btn-sleep").classList.toggle("attn", n.includes("sleepy"));
+
+    // Zzz while asleep
+    const fx = $("fx");
+    if (S.asleep && S.phase === "alive" && !fx.querySelector(".zzz")) {
+      ["Z", "z", "Z"].forEach((z, i) => {
+        const el = document.createElement("div");
+        el.className = "zzz"; el.textContent = z;
+        el.style.left = "56%"; el.style.top = "34%"; el.style.animationDelay = i * 0.8 + "s";
+        fx.appendChild(el);
+      });
+    } else if (!S.asleep) fx.querySelectorAll(".zzz").forEach((z) => z.remove());
+
+    try { if ("setAppBadge" in navigator) n.length ? navigator.setAppBadge(n.length) : navigator.clearAppBadge(); } catch (e) {}
+  }
+
+  // Idle wandering across the screen.
+  let wanderTimer = null;
+  function wander() {
+    clearTimeout(wanderTimer);
+    wanderTimer = setTimeout(wander, 2200 + Math.random() * 2000);
+    if (S.phase !== "alive" || S.asleep || anyPanelOpen() || busy) return;
+    const box = $("pet-box"), pet = $("pet");
+    const target = 25 + Math.random() * 45;
+    const cur = parseFloat(box.style.left) || 50;
+    pet.classList.toggle("flip", target > cur); // sprites face left; flip to walk right
+    box.style.left = target + "%";
+  }
+
+  // ---------- Actions ----------
+  let busy = false;
+  function guard(needAwake = true) {
+    if (S.phase === "egg") { toast("It's still an egg!"); sfx.no(); return false; }
+    if (S.phase === "fainted") { showFainted(); return false; }
+    if (needAwake && S.asleep) { toast("Shh... it's sleeping"); sfx.no(); return false; }
+    if (busy) return false;
+    return true;
+  }
+  function commit() { save(); render(); }
+
+  function feed(kind) {
+    closePanels();
+    if (kind === "berry" && S.hunger >= 95) { toast("It's full!"); sfx.no(); return; }
+    if (kind === "puff" && S.happy >= 100) { toast("It doesn't want any"); sfx.no(); return; }
+    busy = true;
+    const food = $("food"), box = $("pet-box");
+    food.innerHTML = FOODS[kind];
+    food.style.display = "block";
+    food.style.left = `calc(${parseFloat(box.style.left) || 50}% - ${$("pet").width / 2 + 30}px)`;
+    let bites = 0;
+    const chomp = setInterval(() => {
+      bites++;
+      sfx.tap();
+      food.style.clipPath = `inset(0 0 0 ${bites * 33}%)`;
+      $("pet").classList.remove("bounce"); void $("pet").offsetWidth; $("pet").classList.add("bounce");
+      if (bites >= 3) {
+        clearInterval(chomp);
+        food.style.display = "none"; food.style.clipPath = "";
+        if (kind === "berry") {
+          if (S.hunger < 25) S.friendship = clamp(S.friendship + 2);
+          S.hunger = clamp(S.hunger + 30); S.weight += 1; S.health = clamp(S.health + 3);
+        } else {
+          S.happy = clamp(S.happy + 22); S.hunger = clamp(S.hunger + 6); S.weight += 2;
+        }
+        const c = petCenter(); floatFx(kind === "berry" ? "😋" : "💖", c.x, c.y);
+        sfx.yes(); busy = false; commit();
+      }
+    }, 450);
+  }
+
+  function clean() {
+    if (S.poops === 0) { toast("Already clean!"); sfx.no(); return; }
+    busy = true;
+    const poops = $("poops");
+    poops.style.transition = "transform .6s ease-in, opacity .6s";
+    poops.style.transform = "translateX(80px)"; poops.style.opacity = "0";
+    sfx.yes();
+    setTimeout(() => {
+      S.poops = 0; S.poopTimer = 0; S.friendship = clamp(S.friendship + 1);
+      poops.style.transition = ""; poops.style.transform = ""; poops.style.opacity = "";
+      busy = false; commit(); toast("Squeaky clean!");
+    }, 650);
+  }
+
+  function heal() {
+    if (!S.sick) { toast("It's not sick!"); sfx.no(); return; }
+    S.sick = false; S.happy = clamp(S.happy - 5); S.health = clamp(S.health + 10);
+    const c = petCenter(); floatFx("✚", c.x, c.y);
+    sfx.yes(); commit(); toast("All better!");
+  }
+
+  function toggleSleep() {
+    if (S.asleep) {
+      S.asleep = false;
+      if (S.energy < 50) { S.happy = clamp(S.happy - 8); toast("It woke up grumpy..."); sfx.no(); }
+      else { toast("Good morning!"); sfx.yes(); }
+    } else {
+      if (S.energy > 85) { toast("It's not sleepy"); sfx.no(); return; }
+      S.asleep = true; toast("Good night..."); sfx.tap();
+    }
+    commit();
+  }
+
+  function petIt() {
+    if (S.phase === "egg") { $("egg").classList.remove("wobble"); void $("egg").offsetWidth; $("egg").classList.add("wobble"); sfx.tap(); return; }
+    if (S.phase !== "alive" || busy) return;
+    if (S.asleep) { toast("Zzz..."); return; }
+    const now = Date.now();
+    if (now - S.lastPet < 3000) return;
+    S.lastPet = now;
+    const hour = Math.floor(now / (60 * MIN));
+    if (S.petHour !== hour) { S.petHour = hour; S.petsThisHour = 0; }
+    S.petsThisHour++;
+    S.happy = clamp(S.happy + 3);
+    if (S.petsThisHour <= 5) S.friendship = clamp(S.friendship + 0.5);
+    const c = petCenter(); floatFx("♥", c.x, c.y);
+    $("pet").classList.remove("bounce"); void $("pet").offsetWidth; $("pet").classList.add("bounce");
+    sfx.happy(); commit();
+  }
+
+  // ---------- Mini-game: guess which way it will turn ----------
+  let game = null;
+  function startGame() {
+    if (S.energy < 15) { toast("Too tired to play"); sfx.no(); return; }
+    game = { round: 0, wins: 0, locked: false };
+    setSprite($("game-pet"), species().dex, 2.4);
+    $("game-pet").style.transform = "";
+    $("game-title").textContent = "WHICH WAY?";
+    updateGameScore();
+    openPanel("p-game");
+  }
+  function updateGameScore() {
+    $("game-score").textContent = `Round ${Math.min(game.round + 1, 5)}/5  ·  ${"★".repeat(game.wins)}${"☆".repeat(game.round - game.wins)}`;
+  }
+  function guess(dir) {
+    if (!game || game.locked) return;
+    game.locked = true;
+    const turn = Math.random() < 0.5 ? -1 : 1;
+    const img = $("game-pet");
+    img.style.transform = turn === 1 ? "scaleX(-1)" : "scaleX(1) translateX(-6px)";
+    const win = turn === dir;
+    if (win) { game.wins++; sfx.yes(); } else sfx.no();
+    $("game-title").textContent = win ? "YES!" : "NOPE!";
+    game.round++;
+    setTimeout(() => {
+      if (game.round >= 5) return endGame();
+      img.style.transform = ""; $("game-title").textContent = "WHICH WAY?";
+      updateGameScore(); game.locked = false;
+    }, 800);
+    updateGameScore();
+  }
+  function endGame() {
+    const won = game.wins >= 3;
+    S.happy = clamp(S.happy + (won ? 30 : 12));
+    S.friendship = clamp(S.friendship + (won ? 4 : 1));
+    S.energy = clamp(S.energy - 8); S.hunger = clamp(S.hunger - 5);
+    S.weight = Math.max(1, S.weight - 1);
+    game = null; commit();
+    showMessage(won ? "YOU WIN!" : "GOOD GAME", won ? "It had a blast! ♥♥" : "It still had fun playing with you.", [["OK", closePanels]]);
+    if (won) sfx.happy();
+  }
+
+  // ---------- Stats ----------
+  let statsPage = 0;
+  const hearts = (v) => { const n = Math.ceil(v / 25); return `<span class="hearts">${"♥".repeat(n)}<span class="off">${"♥".repeat(4 - n)}</span></span>`; };
+  const bar = (v) => `<span class="bar"><i style="width:${v}%"></i></span>`;
+  function showStats() {
+    const p = $("p-stats");
+    const sp = species();
+    const ageH = (Date.now() - S.hatchedAt) / (60 * MIN);
+    const next = EVOLVE[S.stage + 1];
+    const pages = [
+      `<h3>${(S.name || sp.name).toUpperCase()}</h3>
+       <div class="row"><span>Hunger</span>${hearts(S.hunger)}</div>
+       <div class="row"><span>Happy</span>${hearts(S.happy)}</div>
+       <div class="row"><span>Energy</span>${bar(S.energy)}</div>
+       <div class="row"><span>Health</span>${bar(S.health)}</div>
+       <div class="row"><span>Friendship</span>${bar(S.friendship)}</div>`,
+      `<h3>PROFILE</h3>
+       <div class="row"><span>Species</span><span>${sp.name}</span></div>
+       <div class="row"><span>Age</span><span>${Math.floor(ageH / 24)}d ${Math.floor(ageH % 24)}h</span></div>
+       <div class="row"><span>Weight</span><span>${S.weight} lb</span></div>
+       <div class="row"><span>Status</span><span>${S.sick ? "Sick" : S.asleep ? "Asleep" : "OK"}</span></div>
+       <div class="row" style="font-size:10px;font-weight:500;opacity:.8">${next ? `Evolves after ${next.hours}h with lots of love` : "Fully evolved!"}</div>`,
+      `<h3>OPTIONS</h3>
+       <button class="lcd-btn" id="opt-sound">Sound: ${S.sound ? "On" : "Off"}</button>
+       <button class="lcd-btn" id="opt-rename">Rename</button>
+       <button class="lcd-btn" id="opt-release">Release &amp; get a new egg</button>`,
+    ];
+    p.innerHTML = pages[statsPage] + `<div class="spacer"></div>
+      <div class="pager"><span>◀ tap sides ▶</span><span>${statsPage + 1}/${pages.length}</span></div>
+      <button class="lcd-btn center" data-close>Back</button>`;
+    p.querySelector("[data-close]").onclick = () => { sfx.tap(); closePanels(); };
+    if (statsPage === 2) {
+      $("opt-sound").onclick = () => { S.sound = !S.sound; save(); sfx.tap(); showStats(); };
+      $("opt-rename").onclick = () => askName(false);
+      $("opt-release").onclick = () => showMessage("RELEASE?", `Say goodbye to ${S.name || sp.name} and start over with a new egg?`,
+        [["Yes, release", () => { const sound = S.sound; S = fresh(); S.sound = sound; save(); closePanels(); render(); toast("A new egg!"); }], ["No", closePanels]]);
+    }
+    openPanel("p-stats");
+  }
+  $("p-stats").addEventListener("click", (e) => {
+    if (e.target.closest("button")) return;
+    const r = $("p-stats").getBoundingClientRect();
+    statsPage = (statsPage + (e.clientX - r.left < r.width / 2 ? 2 : 1)) % 3;
+    sfx.tap(); showStats();
+  });
+
+  // ---------- Messages / hatching / evolution / fainting ----------
+  function showMessage(title, body, actions) {
+    $("msg-title").textContent = title;
+    $("msg-body").innerHTML = body;
+    const box = $("msg-actions"); box.innerHTML = "";
+    actions.forEach(([label, fn]) => {
+      const b = document.createElement("button");
+      b.className = "lcd-btn center"; b.textContent = label;
+      b.onclick = () => { sfx.tap(); fn(); };
+      box.appendChild(b);
+    });
+    openPanel("p-msg");
+  }
+
+  function askName(isNew) {
+    const sp = species();
+    showMessage(isNew ? "IT HATCHED!" : "RENAME",
+      `${isNew ? `It's a ${sp.name}!<br>` : ""}Give it a nickname:<br><br><input class="lcd-input" id="name-input" maxlength="10" value="${(S.name || sp.name).replace(/"/g, "")}">`,
+      [["OK", () => {
+        const v = ($("name-input").value || "").trim().slice(0, 10);
+        S.name = v || sp.name; save(); closePanels(); render();
+      }]]);
+    setTimeout(() => { const i = $("name-input"); if (i) { i.focus(); i.select(); } }, 50);
+  }
+
+  function hatch() {
+    S.phase = "alive"; S.hatchedAt = Date.now(); S.last = Date.now();
+    $("flash").classList.remove("go"); void $("flash").offsetWidth; $("flash").classList.add("go");
+    sfx.hatch();
+    save(); render();
+    setTimeout(() => askName(true), 900);
+  }
+
+  function evolve() {
+    if (!S.pendingEvolution || busy || anyPanelOpen() || S.phase !== "alive") return;
+    busy = true;
+    const from = species().name;
+    showMessage("WHAT?", `${S.name || from} is evolving!`, []);
+    sfx.evolve();
+    setTimeout(() => {
+      closePanels();
+      $("flash").classList.remove("go"); void $("flash").offsetWidth; $("flash").classList.add("go");
+      setTimeout(() => {
+        S.stage++; S.pendingEvolution = false; S.happy = clamp(S.happy + 20);
+        if (S.name === from) S.name = species().name;
+        save(); render();
+      }, 1900);
+      setTimeout(() => {
+        busy = false;
+        showMessage("CONGRATS!", `${from} evolved into ${species().name}!`, [["Yay!", closePanels]]);
+        sfx.happy();
+      }, 2700);
+    }, 1600);
+  }
+
+  function showFainted() {
+    const nm = S.name || species().name;
+    showMessage("OH NO!", `${nm} fainted from neglect...`, [["Rush to the Pokémon Center", () => {
+      S.phase = "alive"; S.health = 60; S.hunger = 60; S.happy = 40; S.energy = 80;
+      S.sick = false; S.poops = 0; S.friendship = clamp(S.friendship - 15); S.last = Date.now();
+      save(); closePanels(); render();
+      showMessage("ALL HEALED", `${nm} is back to health! Take good care of it.`, [["OK", closePanels]]);
+    }]]);
+  }
+
+  // ---------- Wiring ----------
+  $("btn-stats").onclick = () => { if (S.phase === "egg") { toast("It's still an egg!"); return; } sfx.tap(); statsPage = 0; showStats(); };
+  $("btn-feed").onclick = () => { if (guard()) { sfx.tap(); openPanel("p-feed"); } };
+  $("btn-play").onclick = () => { if (guard()) { sfx.tap(); startGame(); } };
+  $("btn-clean").onclick = () => { if (guard(false)) clean(); };
+  $("btn-heal").onclick = () => { if (guard(false)) heal(); };
+  $("btn-sleep").onclick = () => { if (guard(false)) toggleSleep(); };
+  $("pet").onclick = petIt;
+  $("egg").onclick = petIt;
+  document.querySelectorAll("[data-food]").forEach((b) => (b.onclick = () => feed(b.dataset.food)));
+  document.querySelectorAll("[data-dir]").forEach((b) => (b.onclick = () => guess(+b.dataset.dir)));
+  document.querySelectorAll("[data-close]").forEach((b) => (b.onclick = () => { sfx.tap(); closePanels(); }));
+
+  function tick() {
+    if (S.phase === "egg" && Date.now() - S.created >= HATCH_MS && !anyPanelOpen()) hatch();
+    simulate();
+    if (S.phase === "fainted" && !anyPanelOpen()) showFainted();
+    save(); render();
+    evolve();
+  }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); else save(); });
+  window.addEventListener("pagehide", save);
+
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+
+  tick();
+  setInterval(tick, 5000);
+  wander();
+})();
+</script>
+</body>
+</html>
